@@ -1,18 +1,18 @@
 <template>
   <div id="world">
     <h1>Игра «Жизнь»</h1>
-    <div>Кликнете в любом месте зелёного поля для создания жизни.</div>
-    <div>Нажмите старт для запуска жизни.</div>
+    <div>Нажмите «расставить клетки», а затем «старт» для запуска жизни.</div>
     <div>
       <button @click="setRandomSquares">Расставить клетки</button>
       <button @click="startLife">Старт</button>
+      <button @click="stopLife">Остановить</button>
     </div>
     <canvas
       id="field"
       ref="field"
       @click="makeLifeSquares()"
-      width="600"
-      height="600"
+      :width="canvas.side"
+      :height="canvas.side"
     ></canvas>
   </div>
 </template>
@@ -24,15 +24,16 @@ export default {
     return {
       context: null,
       canvas: {
-        side: 600
+        side: 200
       },
       square: {
-        color: "#eec842",
+        color: "#ef6262",
         side: 10 //px
       },
       started: false,
       squaresWithLife: [], //положим сюда координаты живых квадратиков
-      lifeCycle: 240 //ms
+      lifeCycle: 500, //ms
+      interval: null
     };
   },
   computed: {
@@ -74,26 +75,36 @@ export default {
     },
     startLife() {
       console.log("Жизнь начинает жить");
-      setInterval(() => {
+      // генерим новые квадратики по правилам игры
+      // let newLifeSquares = this.makeNewSquares();
+      // console.log(newLifeSquares);
+      //
+      // //очищаем поле
+      // this.resetSquares();
+      //
+      // //отрисовываем новые квадратики
+      // this.drawSquares(newLifeSquares);
+      // this.squaresWithLife = newLifeSquares;
+
+      this.interval = setInterval(() => {
         // генерим новые квадратики по правилам
         let newLifeSquares = this.makeNewSquares();
 
         //очищаем поле
-        //todo
+        this.resetSquares();
 
         //отрисовываем новые квадратики
         this.drawSquares(newLifeSquares);
+        this.squaresWithLife = newLifeSquares;
       }, this.lifeCycle);
     },
+    stopLife(){
+      clearInterval(this.interval);
+    },
     makeNewSquares() {
-      // сюда сложим новорожденных
-      let birnSquares = [];
-      // продолжают жить
-      let stillAlive = [];
-      // умершие
-      let deadSquares = [];
+      // новые квадратики, которые пойдут в отрисовку
+      let newSquares = [];
 
-      // герерируем живые квадратики
       for (let y = 0; y < this.yLength; y++) {
         for (let x = 0; x < this.xLength; x++) {
           const SQUARE = { x, y };
@@ -101,11 +112,126 @@ export default {
           const isExists = this.squaresWithLife.some(
             s => JSON.stringify(s) === JSON.stringify(SQUARE)
           );
+
+          // число соседей
+          const neighbors = this.countNeighbors(SQUARE);
+
           if (isExists) {
-            //todo
+            if (neighbors === 2 || neighbors === 3) newSquares.push(SQUARE);
+          } else {
+            if (neighbors === 3) newSquares.push(SQUARE);
           }
         }
       }
+
+      return newSquares;
+    },
+    countNeighbors(square) {
+      let { x, y } = square;
+      let neighborhoods = 0;
+      const liveSquares = this.squaresWithLife;
+
+      let n00 = function(x, y) {
+        {
+          return {
+            x: x - 1,
+            y: y - 1
+          };
+        }
+      };
+      let n01 = function(x, y) {
+        {
+          return {
+            x,
+            y: y - 1
+          };
+        }
+      };
+      let n02 = function(x, y) {
+        {
+          return {
+            x: x + 1,
+            y: y - 1
+          };
+        }
+      };
+      let n10 = function(x, y) {
+        {
+          return {
+            x: x - 1,
+            y
+          };
+        }
+      };
+      let n12 = function(x, y) {
+        {
+          return {
+            x: x + 1,
+            y
+          };
+        }
+      };
+      let n20 = function(x, y) {
+        {
+          return {
+            x: x - 1,
+            y: y + 1
+          };
+        }
+      };
+      let n21 = function(x, y) {
+        {
+          return {
+            x,
+            y: y + 1
+          };
+        }
+      };
+      let n22 = function(x, y) {
+        {
+          return {
+            x: x + 1,
+            y: y + 1
+          };
+        }
+      };
+
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n00(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n01(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n02(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n10(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n12(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n20(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n21(x, y)))
+      )
+        neighborhoods++;
+      if (
+        liveSquares.some(s => JSON.stringify(s) === JSON.stringify(n22(x, y)))
+      )
+        neighborhoods++;
+
+      // возвращаем ко-во соседей
+      console.log(neighborhoods);
+      return neighborhoods;
     },
     resetSquares() {
       this.squaresWithLife = [];
@@ -125,7 +251,7 @@ export default {
   flex-direction: column;
 }
 #field {
-  background-color: darkseagreen;
+  background-color: #757575;
   margin: 0 auto;
 }
 button {
