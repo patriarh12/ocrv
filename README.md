@@ -1,4 +1,5 @@
-# ocrv
+# The Game of Life
+The Game of Life implemented on Vue.js for OCRV
 
 ## Project setup
 ```

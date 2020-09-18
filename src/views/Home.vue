@@ -3,17 +3,25 @@
     <h1>Игра «Жизнь»</h1>
     <div>Нажмите «расставить клетки», а затем «старт» для запуска жизни.</div>
     <div>
-      <button @click="setRandomSquares">Расставить клетки</button>
-      <button @click="startLife">Старт</button>
-      <button @click="stopLife">Остановить</button>
+      <button v-if="!squaresWithLife.length" @click="setRandomSquares">
+        Расставить клетки
+      </button>
+      <div v-else>
+        <button v-if="!started" @click="startLife">
+          Запустить жизнь
+        </button>
+        <button v-else @click="stopLife">Сбросить жизнь</button>
+      </div>
     </div>
     <canvas
       id="field"
       ref="field"
-      @click="makeLifeSquares()"
       :width="canvas.side"
       :height="canvas.side"
     ></canvas>
+    <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life"
+      ><small>Подробнее об игре в Вики</small></a
+    >
   </div>
 </template>
 
@@ -27,7 +35,7 @@ export default {
         side: 200
       },
       square: {
-        color: "#ef6262",
+        color: "#ffffff",
         side: 10 //px
       },
       started: false,
@@ -52,14 +60,14 @@ export default {
       // герерируем живые квадратики
       for (let y = 0; y < this.yLength; y++) {
         for (let x = 0; x < this.xLength; x++) {
-          this.makeLifeSquares(x, y);
+          this.makeLifeOrDeadSquare(x, y);
         }
       }
 
       // отрисовываем
       this.drawSquares(this.squaresWithLife);
     },
-    makeLifeSquares(x, y) {
+    makeLifeOrDeadSquare(x, y) {
       let isAlife = Math.random() >= 0.5;
       if (isAlife) {
         this.squaresWithLife.push({ x, y });
@@ -75,16 +83,7 @@ export default {
     },
     startLife() {
       console.log("Жизнь начинает жить");
-      // генерим новые квадратики по правилам игры
-      // let newLifeSquares = this.makeNewSquares();
-      // console.log(newLifeSquares);
-      //
-      // //очищаем поле
-      // this.resetSquares();
-      //
-      // //отрисовываем новые квадратики
-      // this.drawSquares(newLifeSquares);
-      // this.squaresWithLife = newLifeSquares;
+      this.started = true;
 
       this.interval = setInterval(() => {
         // генерим новые квадратики по правилам
@@ -98,8 +97,10 @@ export default {
         this.squaresWithLife = newLifeSquares;
       }, this.lifeCycle);
     },
-    stopLife(){
+    stopLife() {
       clearInterval(this.interval);
+      this.started = false;
+      this.resetSquares();
     },
     makeNewSquares() {
       // новые квадратики, которые пойдут в отрисовку
@@ -229,8 +230,7 @@ export default {
       )
         neighborhoods++;
 
-      // возвращаем ко-во соседей
-      console.log(neighborhoods);
+      // возвращаем кол-во соседей
       return neighborhoods;
     },
     resetSquares() {
@@ -249,6 +249,7 @@ export default {
   display: flex;
   justify-content: center;
   flex-direction: column;
+  align-items: center;
 }
 #field {
   background-color: #757575;
@@ -256,5 +257,8 @@ export default {
 }
 button {
   margin: 12px;
+}
+a {
+  margin-top: 42px;
 }
 </style>
